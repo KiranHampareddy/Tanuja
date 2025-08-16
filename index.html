@@ -26,10 +26,7 @@
                         <input type="text" placeholder="Material Name" id="rm-name" required>
                         <select id="rm-unit-select" required>
                             <option value="" disabled selected>Select Unit</option>
-                            <option value="Pcs">Pcs</option>
-<option value="Grm">Grm</option>
-<option value="Mtr">Mtr</option>
-<option value="Reel">Reel</option>
+                            <option value="Pcs">Pcs</option><option value="Grm">Grm</option><option value="Mtr">Mtr</option><option value="Reel">Reel</option>
                         </select>
                         <input type="number" step="1" placeholder="Total Qty in Pack" id="rm-pack-qty" required>
                         <input type="number" step="0.01" placeholder="Total Cost for Pack" id="rm-pack-cost" required>
@@ -50,7 +47,7 @@
                     <h3>Packing Supplies</h3>
                     <form id="form-packing">
                         <input type="text" placeholder="Item Name" id="packing-name" required>
-                        <input type="text" placeholder="Unit (e.g., pcs)" id="packing-unit" required>
+                        <input type="text" placeholder="Unit (e.g., Pcs)" id="packing-unit" required>
                         <input type="number" step="0.01" placeholder="Price per Unit" id="packing-price" required>
                         <button type="submit">Add Packing</button>
                     </form>
@@ -71,8 +68,8 @@
         <section class="billing-panel">
             <h2>Invoice Creator</h2>
             <div class="invoice-header">
-                <div><label for="customer-name">Customer Name:</label><input type="text" id="customer-name" placeholder="Enter the Customer Name"></div>
-                <div><label for="product-name">Product Name:</label><input type="text" id="product-name" placeholder="Enter the Product Name"></div>
+                <div><label for="customer-name">Customer Name:</label><input type="text" id="customer-name" placeholder="Enter customer name"></div>
+                <div><label for="product-name">Product Name:</label><input type="text" id="product-name" placeholder="Enter product name"></div>
                 <div><label>Date:</label><span id="bill-date"></span></div>
                 <div><label>Bill ID:</label><span id="bill-id"></span></div>
                 <div class="full-width"><label for="order-notes">Notes:</label><textarea id="order-notes" rows="2" placeholder="Special requests, delivery info..."></textarea></div>
@@ -100,12 +97,28 @@
                     <span>Packing Cost:</span><span id="summary-packing">₹0.00</span>
                     <hr><hr>
                     <span>Subtotal:</span><span id="summary-subtotal">₹0.00</span>
-                    <span>Other Expenses (10% of Raw):</span><span id="summary-other-expenses">₹0.00</span>
+                    
+                    <label for="expense-percentage-select">Other Expenses (% of Raw):</label>
+                    <div class="custom-input-wrapper">
+                        <select id="expense-percentage-select">
+                            <option value="0.05">5%</option><option value="0.10" selected>10%</option><option value="0.15">15%</option><option value="0.20">20%</option><option value="custom">Other...</option>
+                        </select>
+                        <input type="number" id="custom-expense-input" class="custom-input" placeholder="Custom %">
+                    </div>
+                    <span>Expense Amount:</span><span id="summary-other-expenses">₹0.00</span>
                     <hr><hr>
+                    
                     <strong class="total-label">TOTAL MAKING COST:</strong><strong id="summary-making-cost">₹0.00</strong>
+                    
                     <label for="profit-percentage-select" class="total-label">Profit %:</label>
-                    <select id="profit-percentage-select"><option value="0.15">15%</option><option value="0.20" selected>20%</option><option value="0.25">25%</option><option value="0.30">30%</option><option value="0.40">40%</option><option value="0.50">50%</option></select>
+                    <div class="custom-input-wrapper">
+                        <select id="profit-percentage-select">
+                            <option value="0.10">10%</option><option value="0.15">15%</option><option value="0.20" selected>20%</option><option value="0.25">25%</option><option value="0.30">30%</option><option value="0.40">40%</option><option value="0.50">50%</option><option value="custom">Other...</option>
+                        </select>
+                         <input type="number" id="custom-profit-input" class="custom-input" placeholder="Custom %">
+                    </div>
                     <span>Profit Amount:</span><span id="summary-profit">₹0.00</span>
+                    
                     <span>Discount:</span><input type="number" id="discount-input" placeholder="e.g., 50" min="0">
                     <hr><hr>
                     <strong class="total-label final-total">GRAND TOTAL:</strong><strong class="final-total" id="summary-final-price">₹0.00</strong>
@@ -122,5 +135,4 @@
     </main>
 </body>
 <script src="script.js"></script>
-
 </html>
