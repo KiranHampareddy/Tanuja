@@ -1,367 +1,276 @@
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- STATE MANAGEMENT ---
-    let inventory = { rawMaterials: [], labor: [], packing: [], savedBills: [] };
-    let currentInvoice = { items: [], details: {} };
-    let billCounter = 0;
-    
-    const PRELOADED_DATA = {
-        rawMaterials: [
-           { name: "Bangles 8-cut", unit: "Pcs", price: 1.67 },
-{ name: "Bangles 4-cut", unit: "Pcs", price: 2.50 },
-{ name: "Threads", unit: "Reel", price: 22.00 },
-{ name: "Kundan (Eye shape)", unit: "Grm", price: 3.00 },
-{ name: "Kundan (Square shape)", unit: "Grm", price: 2.70 },
-{ name: "White stones", unit: "Grm", price: 3.00 },
-{ name: "Kundan (Drop shape)", unit: "Grm", price: 1.25 },
-{ name: "Square stones", unit: "Grm", price: 2.00 },
-{ name: "Glass bangles", unit: "Pcs", price: 10.00 }
-        ],
-        labor: [
-            { name: "Tanuja", rate: 50.00 }, { name: "Kris", rate: 200.00 }, { name: "Bhri", rate: 200.00 }
-        ],
-        packing: [
-            { name: "Box", unit: "Pcs", price: 30.00 },
-{ name: "Wrapping cover", unit: "Mtr", price: 4.00 },
-{ name: "Stickers", unit: "Pcs", price: 4.25 },
-{ name: "Normal handover cover", unit: "Pcs", price: 1.00 }
-        ]
-    };
-    
-    // --- DOM SELECTORS ---
-    const tables = {
-        rawMaterials: document.getElementById("table-raw-materials"),
-        labor: document.getElementById("table-labor"),
-        packing: document.getElementById("table-packing"),
-        invoice: document.getElementById("invoice-items-table").querySelector("tbody"),
-        savedBills: document.getElementById("table-saved-bills").querySelector("tbody")
-    };
-    const summaryFields = {
-        rawMaterials: document.getElementById("summary-raw-materials"),
-        wages: document.getElementById("summary-wages"),
-        packing: document.getElementById("summary-packing"),
-        subtotal: document.getElementById("summary-subtotal"),
-        otherExpenses: document.getElementById("summary-other-expenses"),
-        makingCost: document.getElementById("summary-making-cost"),
-        profit: document.getElementById("summary-profit"),
-        profitSelect: document.getElementById("profit-percentage-select"),
-        discountInput: document.getElementById("discount-input"),
-        finalPrice: document.getElementById("summary-final-price")
-    };
-    const forms = {
-        rawMaterial: document.getElementById("form-raw-material"),
-        labor: document.getElementById("form-labor"),
-        packing: document.getElementById("form-packing")
-    };
-    const itemAdder = {
-        type: document.getElementById("item-type-select"),
-        item: document.getElementById("item-select"),
-        quantity: document.getElementById("item-quantity"),
-        button: document.getElementById("btn-add-item")
-    };
-    const invoiceDetailsFields = {
-        customer: document.getElementById('customer-name'),
-        product: document.getElementById('product-name'),
-        date: document.getElementById('bill-date'),
-        id: document.getElementById('bill-id'),
-        notes: document.getElementById('order-notes')
-    };
-    
-    // --- DATA HANDLING FUNCTIONS ---
-    function loadData() {
-        const savedData = localStorage.getItem('banglesAppData_v5');
-        const savedCounter = localStorage.getItem('banglesBillCounter');
-        if (savedData) {
-            inventory = JSON.parse(savedData);
-        } else {
-            inventory.rawMaterials = PRELOADED_DATA.rawMaterials;
-            inventory.labor = PRELOADED_DATA.labor;
-            inventory.packing = PRELOADED_DATA.packing;
-        }
-        if (savedCounter) {
-            billCounter = parseInt(savedCounter, 10);
-        }
-    }
-    
-    function saveData() {
-        localStorage.setItem('banglesAppData_v5', JSON.stringify(inventory));
-        localStorage.setItem('banglesBillCounter', billCounter);
-    }
+/* --- GOOGLE FONT IMPORT --- */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
 
-    // --- RENDER FUNCTIONS ---
-    function renderAll() {
-        renderInventoryTables();
-        renderSavedBills();
-    }
-    
-    function renderInventoryTables() {
-        renderTable(inventory.rawMaterials, tables.rawMaterials, ['Name', 'Unit', 'Price/Unit'], 'rawMaterials');
-        renderTable(inventory.labor, tables.labor, ['Name', 'Hourly Rate'], 'labor');
-        renderTable(inventory.packing, tables.packing, ['Name', 'Unit', 'Price/Unit'], 'packing');
-        updateItemAdder();
-    }
-    
-    function renderTable(data, tableElement, headers, type) {
-        tableElement.innerHTML = ``;
-        data.forEach((item, index) => {
-            const row = tableElement.insertRow();
-            Object.values(item).forEach(val => {
-                const cell = row.insertCell();
-                cell.textContent = typeof val === 'number' ? val.toFixed(2) : val;
-            });
-            const actionCell = row.insertCell();
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '&times;';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.onclick = () => {
-                inventory[type].splice(index, 1);
-                saveData();
-                renderInventoryTables();
-            };
-            actionCell.appendChild(deleteBtn);
-        });
-    }
+/* --- COLOR & STYLE VARIABLES --- */
+:root {
+    --primary-color: #007BFF;
+    --secondary-color: #0056b3;
+    --background-color: #F8F9FA;
+    --panel-color: #FFFFFF;
+    --text-color: #343A40;
+    --heading-color: #212529;
+    --border-color: #DEE2E6;
+    --success-color: #28A745;
+    --danger-color: #DC3545;
+    --view-color: #17A2B8;
+    --font-family: 'Lato', sans-serif;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --border-radius: 8px;
+}
 
-    function renderInvoice() {
-        tables.invoice.innerHTML = '';
-        currentInvoice.items.forEach((item, index) => {
-            const row = tables.invoice.insertRow();
-            row.insertCell().textContent = item.type.replace('-', ' ').toUpperCase();
-            row.insertCell().textContent = item.description;
-            row.insertCell().textContent = item.quantity;
-            row.insertCell().textContent = `₹${item.unitPrice.toFixed(2)}`;
-            row.insertCell().textContent = `₹${item.total.toFixed(2)}`;
-            const actionCell = row.insertCell();
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '&times;';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.onclick = () => {
-                currentInvoice.items.splice(index, 1);
-                renderInvoice();
-            };
-            actionCell.appendChild(deleteBtn);
-        });
-        calculateSummary();
-    }
-    
-    function renderSavedBills(filter = '') {
-        tables.savedBills.innerHTML = '';
-        const filteredBills = inventory.savedBills.filter(bill =>
-            bill.details.customer.toLowerCase().includes(filter.toLowerCase()) ||
-            bill.details.id.toLowerCase().includes(filter.toLowerCase())
-        ).reverse();
+/* --- GENERAL & LAYOUT STYLES --- */
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    font-size: 16px;
+}
+header {
+    background: var(--primary-color);
+    color: white;
+    padding: 1.25rem;
+    text-align: center;
+    border-bottom: 4px solid var(--secondary-color);
+}
+.container {
+    display: flex;
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+.inventory-panel, .billing-panel {
+    background-color: var(--panel-color);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+.inventory-panel {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+}
+.billing-panel {
+    flex: 3;
+}
+h1, h2, h3 {
+    color: var(--heading-color);
+}
+h2 {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+.inventory-section {
+    margin-bottom: 2rem;
+}
 
-        filteredBills.forEach((bill) => {
-            const row = tables.savedBills.insertRow();
-            row.insertCell().textContent = bill.details.id;
-            row.insertCell().textContent = bill.details.customer;
-            row.insertCell().textContent = `₹${bill.details.finalPrice.toFixed(2)}`;
-            
-            const actionCell = row.insertCell();
-            actionCell.className = 'action-cell';
+/* --- FORMS & INPUTS --- */
+form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    align-items: center;
+}
+form button {
+    grid-column: 1 / -1;
+    background-color: var(--secondary-color);
+    color: white;
+}
+input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+textarea {
+    resize: vertical;
+}
 
-            const viewBtn = document.createElement('button');
-            viewBtn.textContent = 'View';
-            viewBtn.className = 'view-btn';
-            viewBtn.onclick = () => loadBillIntoCreator(bill);
-            actionCell.appendChild(viewBtn);
-            
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '&times;';
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.onclick = () => {
-                if (confirm(`Are you sure you want to delete Bill ${bill.details.id}? This cannot be undone.`)) {
-                    const originalIndex = inventory.savedBills.findIndex(savedBill => savedBill.details.id === bill.details.id);
-                    if (originalIndex > -1) {
-                        inventory.savedBills.splice(originalIndex, 1);
-                        saveData();
-                        renderSavedBills();
-                    }
-                }
-            };
-            actionCell.appendChild(deleteBtn);
-        });
-    }
-    
-    // --- INVOICE LOGIC FUNCTIONS ---
-    function setupNewBill() {
-        currentInvoice = { items: [], details: {} };
-        billCounter++;
-        invoiceDetailsFields.customer.value = '';
-        invoiceDetailsFields.product.value = '';
-        invoiceDetailsFields.notes.value = '';
-        summaryFields.discountInput.value = '';
-        summaryFields.profitSelect.value = "0.20";
-        invoiceDetailsFields.date.textContent = new Date().toLocaleDateString();
-        invoiceDetailsFields.id.textContent = `BGL-${new Date().getFullYear()}-${String(billCounter).padStart(3, '0')}`;
-        renderInvoice();
-    }
-    
-    function addItemToInvoice() {
-        const type = itemAdder.type.value;
-        const index = itemAdder.item.value;
-        const quantity = parseFloat(itemAdder.quantity.value);
-        if (index === '' || !quantity || quantity <= 0) {
-            alert('Please select an item and enter a valid quantity.');
-            return;
-        }
-        let itemData, price, description;
-        if (type === 'raw-material') {
-            itemData = inventory.rawMaterials[index];
-            price = itemData.price;
-            description = `${itemData.name} (${itemData.unit})`;
-        } else if (type === 'labor') {
-            itemData = inventory.labor[index];
-            price = itemData.rate;
-            description = `${itemData.name} (Hours)`;
-        } else {
-            itemData = inventory.packing[index];
-            price = itemData.price;
-            description = `${itemData.name} (${itemData.unit})`;
-        }
-        currentInvoice.items.push({
-            type: type,
-            description: description,
-            quantity: quantity,
-            unitPrice: price,
-            total: quantity * price
-        });
-        renderInvoice();
-        itemAdder.quantity.value = '';
-    }
+/* --- CUSTOM INPUT WRAPPER --- */
+.custom-input-wrapper {
+    display: flex;
+    gap: 10px;
+}
+.custom-input {
+    display: none;
+}
 
-    function calculateSummary() {
-        let costs = { raw: 0, wages: 0, packing: 0 };
-        currentInvoice.items.forEach(item => {
-            if (item.type === 'raw-material') costs.raw += item.total;
-            if (item.type === 'labor') costs.wages += item.total;
-            if (item.type === 'packing') costs.packing += item.total;
-        });
-        const subtotal = costs.raw + costs.wages + costs.packing;
-        const otherExpenses = costs.raw * 0.10;
-        const makingCost = subtotal + otherExpenses;
-        const profitPercent = parseFloat(summaryFields.profitSelect.value);
-        const profit = makingCost * profitPercent;
-        const discount = parseFloat(summaryFields.discountInput.value) || 0;
-        const finalPrice = makingCost + profit - discount;
-        
-        summaryFields.rawMaterials.textContent = `₹${costs.raw.toFixed(2)}`;
-        summaryFields.wages.textContent = `₹${costs.wages.toFixed(2)}`;
-        summaryFields.packing.textContent = `₹${costs.packing.toFixed(2)}`;
-        summaryFields.subtotal.textContent = `₹${subtotal.toFixed(2)}`;
-        summaryFields.otherExpenses.textContent = `₹${otherExpenses.toFixed(2)}`;
-        summaryFields.makingCost.textContent = `₹${makingCost.toFixed(2)}`;
-        summaryFields.profit.textContent = `₹${profit.toFixed(2)}`;
-        summaryFields.finalPrice.textContent = `₹${finalPrice.toFixed(2)}`;
-        
-        return { costs, subtotal, otherExpenses, makingCost, profit, discount, finalPrice };
-    }
+/* --- BUTTONS --- */
+button {
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 700;
+    padding: 12px 18px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+.primary-action {
+    background-color: var(--primary-color);
+    color: white;
+    width: 48%;
+    font-size: 1rem;
+}
+.secondary-action {
+    background: none;
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    width: 100%;
+}
+#btn-add-item {
+    background-color: var(--success-color);
+    color: white;
+}
+.view-btn {
+    background-color: var(--view-color);
+    color: white;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+.delete-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 24px;
+    text-align: center;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.delete-btn:hover {
+    transform: translateY(-2px) scale(1.1);
+}
 
-    function saveCurrentBill() {
-        if (currentInvoice.items.length === 0) {
-            alert("Cannot save an empty bill. Please add items first.");
-            return;
-        }
-        const summary = calculateSummary();
-        const billToSave = {
-            items: JSON.parse(JSON.stringify(currentInvoice.items)),
-            details: {
-                id: invoiceDetailsFields.id.textContent,
-                customer: invoiceDetailsFields.customer.value,
-                product: invoiceDetailsFields.product.value,
-                date: invoiceDetailsFields.date.textContent,
-                notes: invoiceDetailsFields.notes.value,
-                profitPercent: summaryFields.profitSelect.value,
-                discount: summaryFields.discountInput.value,
-                ...summary
-            }
-        };
-        const existingBillIndex = inventory.savedBills.findIndex(b => b.details.id === billToSave.details.id);
-        if (existingBillIndex > -1) {
-            inventory.savedBills[existingBillIndex] = billToSave;
-        } else {
-            inventory.savedBills.push(billToSave);
-        }
-        saveData();
-        renderSavedBills();
-        alert(`Bill ${billToSave.details.id} saved successfully!`);
-    }
+/* --- TABLES --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+.table-wrapper {
+    overflow-x: auto;
+}
+th, td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+}
+th {
+    background-color: #F8F9FA;
+    color: var(--heading-color);
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+tbody tr:hover {
+    background-color: #F1F3F5;
+}
 
-    function loadBillIntoCreator(bill) {
-        invoiceDetailsFields.id.textContent = bill.details.id;
-        invoiceDetailsFields.customer.value = bill.details.customer;
-        invoiceDetailsFields.product.value = bill.details.product;
-        invoiceDetailsFields.date.textContent = bill.details.date;
-        invoiceDetailsFields.notes.value = bill.details.notes;
-        summaryFields.profitSelect.value = bill.details.profitPercent;
-        summaryFields.discountInput.value = bill.details.discount;
-        currentInvoice.items = JSON.parse(JSON.stringify(bill.items));
-        renderInvoice();
-        window.scrollTo(0, 0);
-    }
+/* --- INVOICE SPECIFIC STYLES --- */
+.invoice-header, .invoice-item-adder {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+.full-width {
+    grid-column: 1 / -1;
+}
+.invoice-actions {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.new-bill-wrapper {
+    margin-top: 1rem;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 1rem;
+}
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem 2rem;
+    font-size: 1rem;
+    align-items: center;
+}
+.summary-grid span, .summary-grid label {
+    text-align: left;
+    font-weight: 400;
+}
+.summary-grid span:nth-child(even), #summary-making-cost, #summary-final-price {
+    text-align: right;
+    font-weight: 700;
+}
+.total-label {
+    grid-column: 1;
+    font-weight: 700 !important;
+}
+.final-total {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+hr {
+    grid-column: 1 / -1;
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
 
-    function updateItemAdder() {
-        const type = itemAdder.type.value;
-        const data = inventory[type === 'raw-material' ? 'rawMaterials' : type];
-        itemAdder.item.innerHTML = data.map((item, index) => `<option value="${index}">${item.name}</option>`).join('');
-    }
-    
-    // --- EVENT LISTENERS ---
-    forms.rawMaterial.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const packQty = parseFloat(document.getElementById("rm-pack-qty").value);
-        const packCost = parseFloat(document.getElementById("rm-pack-cost").value);
-        if (packQty <= 0) {
-            alert("Total Quantity in Pack must be greater than zero.");
-            return;
-        }
-        inventory.rawMaterials.push({
-            name: document.getElementById("rm-name").value,
-            unit: document.getElementById("rm-unit-select").value,
-            price: packCost / packQty
-        });
-        saveData();
-        renderInventoryTables();
-        forms.rawMaterial.reset();
-    });
-    
-    forms.labor.addEventListener('submit', (e) => {
-        e.preventDefault();
-        inventory.labor.push({
-            name: document.getElementById('labor-name').value,
-            rate: parseFloat(document.getElementById('labor-rate').value)
-        });
-        saveData();
-        renderInventoryTables();
-        forms.labor.reset();
-    });
+/* --- SAVED BILLS SECTION --- */
+.saved-bills-section {
+    border-top: 3px solid var(--border-color);
+    margin-top: 2rem;
+    padding-top: 1rem;
+}
+.saved-bills-section table {
+    table-layout: fixed;
+}
+.saved-bills-section td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.saved-bills-section .action-cell {
+    display: flex;
+    gap: 8px;
+}
 
-    forms.packing.addEventListener('submit', (e) => {
-        e.preventDefault();
-        inventory.packing.push({
-            name: document.getElementById('packing-name').value,
-            unit: document.getElementById('packing-unit').value,
-            price: parseFloat(document.getElementById('packing-price').value)
-        });
-        saveData();
-        renderInventoryTables();
-        forms.packing.reset();
-    });
-    
-    itemAdder.type.addEventListener('change', updateItemAdder);
-    itemAdder.button.addEventListener('click', addItemToInvoice);
-    summaryFields.profitSelect.addEventListener('change', calculateSummary);
-    summaryFields.discountInput.addEventListener('input', calculateSummary);
-    document.getElementById('btn-print-bill').addEventListener('click', () => window.print());
-    document.getElementById('btn-save-bill').addEventListener('click', saveCurrentBill);
-    document.getElementById('btn-new-bill').addEventListener('click', () => {
-        saveData();
-        setupNewBill();
-    });
-    document.getElementById('search-saved-bills').addEventListener('input', (e) => renderSavedBills(e.target.value));
-    
-    // --- INITIALIZATION ---
-    loadData();
-    renderAll();
-    setupNewBill();
-});
+
+/* --- RESPONSIVE & PRINT --- */
+@media (max-width: 1200px) {
+    .inventory-panel { flex: 1; }
+    .billing-panel { flex: 2; }
+}
+@media (max-width: 900px) {
+    .container { flex-direction: column; }
+    .invoice-item-adder { grid-template-columns: 1fr; }
+    .primary-action { width: 100%; margin-bottom: 10px; }
+    .invoice-actions { flex-direction: column; }
+}
+@media print {
+    body { background-color: #fff; }
+    .container { flex-direction: column; padding: 0; }
+    .inventory-panel, .invoice-item-adder, .invoice-actions, .delete-btn, header, form button, .new-bill-wrapper, .view-btn, #profit-percentage-select, #discount-input, label { display: none; }
+    .billing-panel { box-shadow: none; width: 100%; }
+    .summary-grid label.total-label { display: block; }
+}
