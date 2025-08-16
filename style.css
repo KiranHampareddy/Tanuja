@@ -1,7 +1,7 @@
 /* --- GOOGLE FONT IMPORT --- */
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
 
-/* --- NEW COLOR & STYLE VARIABLES --- */
+/* --- COLOR & STYLE VARIABLES --- */
 :root {
     --primary-color: #007BFF;
     --secondary-color: #0056b3;
@@ -46,12 +46,12 @@ header {
     border: 1px solid var(--border-color);
 }
 .inventory-panel {
-    flex: 1;
+    flex: 2;
     display: flex;
     flex-direction: column;
 }
 .billing-panel {
-    flex: 2;
+    flex: 3;
 }
 h1, h2, h3 {
     color: var(--heading-color);
@@ -98,6 +98,15 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:foc
 }
 textarea {
     resize: vertical;
+}
+
+/* --- CUSTOM INPUT WRAPPER --- */
+.custom-input-wrapper {
+    display: flex;
+    gap: 10px;
+}
+.custom-input {
+    display: none;
 }
 
 /* --- BUTTONS --- */
@@ -248,13 +257,16 @@ hr {
 
 
 /* --- RESPONSIVE & PRINT --- */
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+    .inventory-panel { flex: 1; }
+    .billing-panel { flex: 2; }
+}
+@media (max-width: 900px) {
     .container { flex-direction: column; }
     .invoice-item-adder { grid-template-columns: 1fr; }
     .primary-action { width: 100%; margin-bottom: 10px; }
     .invoice-actions { flex-direction: column; }
 }
-
 @media print {
     body { background-color: #fff; }
     .container { flex-direction: column; padding: 0; }
